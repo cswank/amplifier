@@ -1,0 +1,5 @@
+* Amplifier
+** Parts
+*** IR Sensor
+VS1838B
+https://electronoobs.com/eng_arduino_tut34
