@@ -1,17 +1,4 @@
 * Amplifier
-** Parts
-*** Amplifier
-1ET400A
-[[./doc/1ET400A - Data Sheet (1.00).pdf][Data Sheet]]
-[[./doc/EVAL1 - Users Guide (1.25).pdf][User's Guide]]
-[[./doc/EVAL1-SMPS1200A400 - App Note (1.00).pdf][App Note]]
-*** Power Supply
-SMPS1200A400
-[[./doc/datasheet_hypex_SMPS1200_datasheet.pdf][Data Sheet]]
-*** IR Sensor
-VS1838B
-[[./doc/VS1838-Infrared-Receiver-datasheet.pdf][Data Sheet]]
-[[https://electronoobs.com/eng_arduino_tut34][Tutorial]]
 ** NEC IR Decoding
 
 The following is from [[https://techdocs.altium.com/display/FPGA/NEC+Infrared+Transmission+Protocol][here]]:
@@ -324,3 +311,17 @@ Actual button press from MiniDSP remote (standby button)
     }
   ]
 #+end_src
+
+** Parts
+*** Amplifier
+1ET400A
+[[./doc/1ET400A - Data Sheet (1.00).pdf][Data Sheet]]
+[[./doc/EVAL1 - Users Guide (1.25).pdf][User's Guide]]
+[[./doc/EVAL1-SMPS1200A400 - App Note (1.00).pdf][App Note]]
+*** Power Supply
+SMPS1200A400
+[[./doc/datasheet_hypex_SMPS1200_datasheet.pdf][Data Sheet]]
+*** IR Sensor
+VS1838B
+[[./doc/VS1838-Infrared-Receiver-datasheet.pdf][Data Sheet]]
+[[https://electronoobs.com/eng_arduino_tut34][Tutorial]]
