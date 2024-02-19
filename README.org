@@ -16,6 +16,7 @@ VS1838B
 
 The following is from [[https://techdocs.altium.com/display/FPGA/NEC+Infrared+Transmission+Protocol][here]]:
 
+#+begin_src 
     Logical '0' – a 562.5µs pulse burst followed by a 562.5µs space, with a total transmit time of 1.125ms
     Logical '1' – a 562.5µs pulse burst followed by a 1.6875ms space, with a total transmit time of 2.25ms
 
@@ -28,8 +29,9 @@ Upon button press:
     the 8-bit command
     the 8-bit logical inverse of the command
     a final 562.5µs pulse burst to signify the end of message transmission.
+#+end_src
 
-Button press from MiniDSP
+Actual button press from MiniDSP remote (standby button)
 #+begin_src json
   [
     {
