@@ -27,6 +27,8 @@ func main() {
 
 	tk := time.NewTicker(250 * time.Millisecond)
 	events := make([]time.Time, 200)
+	var addr, cmd uint8
+	var err error
 	var i int
 	for {
 		select {
@@ -39,7 +41,7 @@ func main() {
 				continue
 			}
 
-			addr, cmd, err := necir.Command(events[:i])
+			addr, cmd, err = necir.Command(events[:i])
 			if err != nil {
 				blink(led, 5)
 			} else {
@@ -51,7 +53,7 @@ func main() {
 			}
 			i = 0
 		case <-irCh:
-			if i > 199 {
+			if i == 199 {
 				continue
 			}
 
