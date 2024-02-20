@@ -33,11 +33,7 @@ func main() {
 	for {
 		select {
 		case <-tk.C:
-			if i == 0 {
-				continue
-			}
-
-			if time.Now().Sub(events[i-1]) < 100*time.Millisecond {
+			if i == 0 || time.Now().Sub(events[i-1]) < 100*time.Millisecond {
 				continue
 			}
 
