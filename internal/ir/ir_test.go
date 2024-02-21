@@ -17,7 +17,17 @@ func TestIR(t *testing.T) {
 		return
 	}
 
-	addr, cmd, err := ir.Command(times)
+	x := ir.New()
+
+	for _, t := range times {
+		x.Add(t)
+	}
+
+	if !assert.True(t, x.Ready()) {
+		return
+	}
+
+	addr, cmd, err := x.Result()
 	if !assert.NoError(t, err) {
 		return
 	}

@@ -2,6 +2,7 @@ package ir
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -11,111 +12,143 @@ const (
 	startSpace = 4500 * time.Microsecond
 	bitStart   = 562500 * time.Nanosecond
 	bitOne     = 1687500 * time.Nanosecond
+
+	initial   = state(0)
+	lead      = state(1)
+	leadSpace = state(2)
+	data      = state(3)
+	ready     = state(4)
 )
 
 type (
-	cmd struct {
-		addr  uint8
-		iAddr uint8
-		cmd   uint8
-		iCmd  uint8
+	state int
+
+	IR struct {
+		lock  *sync.Mutex
+		state state
+		buf   []time.Duration
+		ch    chan time.Time
 	}
 )
 
-func Command(times []time.Time) (addr, cmd uint8, err error) {
-	if len(times) < 67 {
-		return 0, 0, fmt.Errorf("not enough data, must have a length of at least 67")
+func New() *IR {
+	i := &IR{
+		lock: &sync.Mutex{},
+		ch:   make(chan time.Time),
+		buf:  make([]time.Duration, 64),
 	}
-	var t1 time.Time
-	for i, t2 := range times {
-		if i == 0 {
-			t1 = t2
-			continue
-		}
-
-		d := t2.Sub(t1)
-		t1 = t2
-
-		if closeTo(d, start) {
-			return command(times[i:])
-		}
-	}
-
-	return 0, 0, fmt.Errorf("unable to find beginning of a valid command")
+	go i.add()
+	return i
 }
 
-func command(times []time.Time) (addr, cmd uint8, err error) {
-	t1 := times[0]
-	t2 := times[1]
-	d := t2.Sub(t1)
-	if !closeTo(d, startSpace) {
-		return 0, 0, fmt.Errorf("invalid commad, expected a %s space", startSpace)
+func (i *IR) Add(t time.Time) {
+	i.ch <- t
+}
+
+func (i *IR) add() {
+	var t1, t2 time.Time
+	var d time.Duration
+	var j int
+	for {
+		t2 = <-i.ch
+		i.lock.Lock()
+		d = t2.Sub(t1)
+		t1 = t2
+
+		switch i.state {
+		case initial:
+			i.state++
+		case lead:
+			if closeTo(d, start) {
+				i.state++
+			}
+		case leadSpace:
+			if closeTo(d, startSpace) {
+				i.state++
+			} else {
+				i.state = initial
+			}
+		case data:
+			i.buf[j] = d
+			j++
+			if j == 64 {
+				i.state++
+				j = 0
+			}
+		}
+		i.lock.Unlock()
+	}
+}
+
+func (i *IR) Ready() bool {
+	i.lock.Lock()
+	b := i.state == ready
+	i.lock.Unlock()
+	return b
+}
+
+func (i *IR) Result() (addr, cmd uint8, err error) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+
+	i.state = initial
+
+	addr, err = i.parse(0)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid addr %s", err)
 	}
 
-	addr, err = parse("addr", times[1:])
+	iAddr, err := i.parse(1)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("invalid iaddr %s", err)
 	}
 
-	iAddr, err := parse("iAddr", times[17:])
+	cmd, err = i.parse(2)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("invalid cmd %s", err)
 	}
 
-	cmd, err = parse("cmd", times[33:])
+	iCmd, err := i.parse(3)
 	if err != nil {
-		return 0, 0, err
-	}
-
-	iCmd, err := parse("iCmd", times[49:])
-	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("invalid icmd %s", err)
 	}
 
 	if iAddr != addr^0xff {
-		return 0, 0, fmt.Errorf("invalid address %d, inverse %d", addr, iAddr)
+		return 0, 0, fmt.Errorf("invalid address 0x%x, inverse 0x%x", addr, iAddr)
 	}
 
 	if iCmd != cmd^0xff {
-		return 0, 0, fmt.Errorf("invalid command %d, inverse %d", cmd, iCmd)
+		return 0, 0, fmt.Errorf("invalid command 0x%x, inverse 0x%x", cmd, iCmd)
 	}
 
 	return addr, cmd, nil
 }
 
-func parse(typ string, times []time.Time) (val uint8, err error) {
-	var t1 time.Time
-	var i int
-	for j, t2 := range times[:17] {
-		if j == 0 {
-			t1 = t2
-			continue
-		}
+func (i *IR) parse(pos int) (uint8, error) {
+	var mask uint8
+	var val uint8
 
-		d := t2.Sub(t1)
-		t1 = t2
-
-		if i%2 == 0 {
+	for j, d := range i.buf[pos*16 : (pos*16 + 16)] {
+		if j%2 == 0 {
 			if !closeTo(d, bitStart) {
-				return 0, fmt.Errorf("invalid %s", typ)
+				return 0, fmt.Errorf("start bit %d", j/2)
 			}
 		} else {
-			var mask uint8
 			if closeTo(d, bitStart) {
-				// add a zero
+				mask = 0
 			} else if closeTo(d, bitOne) {
-				mask = 1 << (i / 2)
+				mask = 1 << (j / 2)
 			} else {
-				return 0, fmt.Errorf("invalid %s", typ)
+				return 0, fmt.Errorf("data bit %d", j/2)
 			}
 			val ^= mask
 		}
-		i++
 	}
 
 	return val, nil
 }
 
 func closeTo(d time.Duration, val time.Duration) bool {
+	//fmt.Printf("%t %s (%s - %s)\n", d >= val-tolerance && d <= val+tolerance, d, val-tolerance, val+tolerance)
 	return d >= val-tolerance && d <= val+tolerance
 }
