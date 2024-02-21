@@ -40,7 +40,7 @@ func main() {
 
 	for {
 		<-tk.C
-		if i < 66 || time.Now().Sub(events[i-1]) < 100*time.Millisecond {
+		if i < ir.PayloadSize || time.Now().Sub(events[i-1]) < 100*time.Millisecond {
 			continue
 		}
 

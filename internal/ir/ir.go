@@ -11,6 +11,8 @@ const (
 	startSpace = 4500 * time.Microsecond
 	bitStart   = 562500 * time.Nanosecond
 	bitOne     = 1687500 * time.Nanosecond
+
+	PayloadSize = 75
 )
 
 type (
