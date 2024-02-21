@@ -11,16 +11,13 @@ type (
 	empty struct{}
 )
 
+const (
+	led   = machine.LED
+	irPin = machine.GPIO15
+)
+
 func main() {
-	led := machine.LED
-	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
-
-	led.High()
-	time.Sleep(250 * time.Millisecond)
-	led.Low()
-
-	irPin := machine.GPIO15
-	irPin.Configure(machine.PinConfig{Mode: machine.PinInput})
+	setupPins()
 
 	var i int
 	var t2 time.Time
@@ -38,7 +35,6 @@ func main() {
 	}
 
 	irPin.SetInterrupt(machine.PinToggle, irEvents)
-
 	tk := time.NewTicker(250 * time.Millisecond)
 
 	for {
@@ -48,13 +44,13 @@ func main() {
 		}
 
 		irPin.SetInterrupt(0, nil)
-		parseIR(events[:i], led)
+		parseIR(events[:i])
 		i = 0
 		irPin.SetInterrupt(machine.PinToggle, irEvents)
 	}
 }
 
-func parseIR(events []time.Duration, led machine.Pin) {
+func parseIR(events []time.Duration) {
 	addr, cmd, err := ir.Command(events)
 	if err != nil {
 		blink(led, 5)
@@ -74,4 +70,13 @@ func blink(led machine.Pin, n int) {
 		led.Low()
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func setupPins() {
+	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	irPin.Configure(machine.PinConfig{Mode: machine.PinInput})
+
+	led.High()
+	time.Sleep(250 * time.Millisecond)
+	led.Low()
 }
