@@ -12,7 +12,7 @@ const (
 	bitStart   = 562500 * time.Nanosecond
 	bitOne     = 1687500 * time.Nanosecond
 
-	PayloadSize = 75
+	PayloadSize = 67
 )
 
 type (
@@ -24,52 +24,41 @@ type (
 	}
 )
 
-func Command(times []time.Time) (addr, cmd uint8, err error) {
-	if len(times) < 67 {
+func Command(times []time.Duration) (addr, cmd uint8, err error) {
+	if len(times) < PayloadSize {
 		return 0, 0, fmt.Errorf("not enough data, must have a length of at least 67")
 	}
-	var t1 time.Time
-	for i, t2 := range times {
-		if i == 0 {
-			t1 = t2
-			continue
-		}
 
-		d := t2.Sub(t1)
-		t1 = t2
-
-		if closeTo(d, start) {
-			return command(times[i:])
+	for i, d := range times {
+		if closeTo(d, start) && i < len(times)-2 && closeTo(times[i+1], startSpace) {
+			return command(times[i+2:])
 		}
 	}
 
 	return 0, 0, fmt.Errorf("unable to find beginning of a valid command")
 }
 
-func command(times []time.Time) (addr, cmd uint8, err error) {
-	t1 := times[0]
-	t2 := times[1]
-	d := t2.Sub(t1)
-	if !closeTo(d, startSpace) {
-		return 0, 0, fmt.Errorf("invalid commad, expected a %s space", startSpace)
+func command(times []time.Duration) (addr, cmd uint8, err error) {
+	if len(times) < PayloadSize-2 {
+		return 0, 0, fmt.Errorf("not enough data, must have a length of at least 67")
 	}
 
-	addr, err = parse("addr", times[1:])
+	addr, err = parse("addr", times)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	iAddr, err := parse("iAddr", times[17:])
+	iAddr, err := parse("iAddr", times[16:])
 	if err != nil {
 		return 0, 0, err
 	}
 
-	cmd, err = parse("cmd", times[33:])
+	cmd, err = parse("cmd", times[32:])
 	if err != nil {
 		return 0, 0, err
 	}
 
-	iCmd, err := parse("iCmd", times[49:])
+	iCmd, err := parse("iCmd", times[48:])
 	if err != nil {
 		return 0, 0, err
 	}
@@ -85,26 +74,16 @@ func command(times []time.Time) (addr, cmd uint8, err error) {
 	return addr, cmd, nil
 }
 
-func parse(typ string, times []time.Time) (val uint8, err error) {
-	var t1 time.Time
-	var i int
-	for j, t2 := range times[:17] {
-		if j == 0 {
-			t1 = t2
-			continue
-		}
-
-		d := t2.Sub(t1)
-		t1 = t2
-
+func parse(typ string, times []time.Duration) (val uint8, err error) {
+	var mask uint8
+	for i, d := range times[:16] {
 		if i%2 == 0 {
 			if !closeTo(d, bitStart) {
 				return 0, fmt.Errorf("invalid %s", typ)
 			}
 		} else {
-			var mask uint8
 			if closeTo(d, bitStart) {
-				// add a zero
+				mask = 0
 			} else if closeTo(d, bitOne) {
 				mask = 1 << (i / 2)
 			} else {
