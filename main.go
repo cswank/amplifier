@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"github.com/cswank/amplifier/internal/ir"
+	"github.com/cswank/ir"
 )
 
 type (
