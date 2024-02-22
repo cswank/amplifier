@@ -20,66 +20,72 @@ const (
 )
 
 var (
+	events   []time.Duration
 	btnPress bool
+	i        int
+	t1, t2   time.Time
+	tk       *time.Ticker
 )
 
 func main() {
-	setupPins()
-
-	btnInterrupt := func(p machine.Pin) {
-		btnPress = true
-	}
-
-	btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
-
-	var i int
-	var t2 time.Time
-	t1 := time.Now()
-	events := make([]time.Duration, 100)
-	irEvents := func(p machine.Pin) {
-		if i == 100 {
-			return
-		}
-
-		t2 = time.Now()
-		events[i] = t2.Sub(t1)
-		t1 = t2
-		i++
-	}
-
-	irPin.SetInterrupt(machine.PinToggle, irEvents)
-	tk := time.NewTicker(250 * time.Millisecond)
+	setup()
 
 	for {
 		<-tk.C
-		if !(btnPress || (i >= ir.PayloadSize && time.Now().Sub(t1) > 100*time.Millisecond)) {
-			continue
-		}
 
-		if btnPress {
+		switch shouldToggle() {
+		case "button":
 			btnPin.SetInterrupt(0, nil)
-			btnPress = false
 			togglePower()
+			btnPress = false
 			btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
-		} else {
+		case "ir":
 			irPin.SetInterrupt(0, nil)
 			parseIR(events[:i])
 			i = 0
-			irPin.SetInterrupt(machine.PinToggle, irEvents)
+			irPin.SetInterrupt(machine.PinToggle, irInterrupt)
 		}
 	}
+}
+
+func btnInterrupt(p machine.Pin) {
+	btnPress = true
+}
+
+func irInterrupt(p machine.Pin) {
+	if i == 100 {
+		return
+	}
+
+	t2 = time.Now()
+	events[i] = t2.Sub(t1)
+	t1 = t2
+	i++
+}
+
+func shouldToggle() string {
+	if btnPress {
+		return "button"
+	}
+
+	if i >= ir.PayloadSize && time.Now().Sub(t1) > 100*time.Millisecond {
+		return "ir"
+	}
+
+	return ""
 }
 
 func parseIR(events []time.Duration) {
 	addr, cmd, err := ir.Command(events)
 	if err != nil {
 		blink(led, 5)
+		return
+	}
+
+	if addr == 0x35 && cmd == 0x40 {
+		togglePower()
 	} else {
-		if addr == 0x35 && cmd == 0x40 {
-			togglePower()
-		} else {
-			blink(led, 1)
-		}
+		blink(led, 1) // not the button we're looking for
 	}
 }
 
@@ -98,7 +104,11 @@ func togglePower() {
 	blink(led, 2)
 }
 
-func setupPins() {
+func setup() {
+	t1 = time.Now()
+
+	events = make([]time.Duration, 100)
+
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	ampPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	pwrPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
@@ -109,4 +119,9 @@ func setupPins() {
 	led.High()
 	time.Sleep(250 * time.Millisecond)
 	led.Low()
+
+	tk = time.NewTicker(250 * time.Millisecond)
+
+	btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
+	irPin.SetInterrupt(machine.PinToggle, irInterrupt)
 }
