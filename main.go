@@ -12,11 +12,13 @@ type (
 )
 
 const (
-	led    = machine.LED
-	btnPin = machine.GPIO12
-	irPin  = machine.GPIO15
-	ampPin = machine.GPIO16
-	pwrPin = machine.GPIO17
+	led       = machine.LED
+	btnPin    = machine.GPIO12
+	irPin     = machine.GPIO15
+	ampPin    = machine.GPIO20
+	pwrPin    = machine.GPIO21
+	onLEDPin  = machine.GPIO17
+	offLEDPin = machine.GPIO16
 )
 
 var (
@@ -99,8 +101,11 @@ func blink(led machine.Pin, n int) {
 }
 
 func togglePower() {
-	ampPin.Set(!ampPin.Get())
+	st := ampPin.Get()
+	ampPin.Set(!st)
 	pwrPin.Set(!pwrPin.Get())
+	onLEDPin.Set(!st)
+	offLEDPin.Set(st)
 	blink(led, 2)
 }
 
@@ -112,6 +117,11 @@ func setup() {
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	ampPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	pwrPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	onLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	offLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	offLEDPin.High()
+	pwrPin.Low()
+	ampPin.Low()
 
 	irPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
 	btnPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
