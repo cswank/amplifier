@@ -12,19 +12,32 @@ type (
 )
 
 const (
-	led   = machine.LED
-	irPin = machine.GPIO15
+	led    = machine.LED
+	btnPin = machine.GPIO12
+	irPin  = machine.GPIO15
+	ampPin = machine.GPIO16
+	pwrPin = machine.GPIO17
+)
+
+var (
+	btnPress bool
 )
 
 func main() {
 	setupPins()
 
+	btnInterrupt := func(p machine.Pin) {
+		btnPress = true
+	}
+
+	btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
+
 	var i int
 	var t2 time.Time
 	t1 := time.Now()
-	events := make([]time.Duration, 200)
+	events := make([]time.Duration, 100)
 	irEvents := func(p machine.Pin) {
-		if i == 199 {
+		if i == 100 {
 			return
 		}
 
@@ -39,14 +52,21 @@ func main() {
 
 	for {
 		<-tk.C
-		if i < ir.PayloadSize || time.Now().Sub(t1) < 100*time.Millisecond {
+		if !(btnPress || (i >= ir.PayloadSize && time.Now().Sub(t1) > 100*time.Millisecond)) {
 			continue
 		}
 
-		irPin.SetInterrupt(0, nil)
-		parseIR(events[:i])
-		i = 0
-		irPin.SetInterrupt(machine.PinToggle, irEvents)
+		if btnPress {
+			btnPin.SetInterrupt(0, nil)
+			btnPress = false
+			togglePower()
+			btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
+		} else {
+			irPin.SetInterrupt(0, nil)
+			parseIR(events[:i])
+			i = 0
+			irPin.SetInterrupt(machine.PinToggle, irEvents)
+		}
 	}
 }
 
@@ -56,7 +76,7 @@ func parseIR(events []time.Duration) {
 		blink(led, 5)
 	} else {
 		if addr == 0x35 && cmd == 0x40 {
-			blink(led, 2)
+			togglePower()
 		} else {
 			blink(led, 1)
 		}
@@ -72,9 +92,19 @@ func blink(led machine.Pin, n int) {
 	}
 }
 
+func togglePower() {
+	ampPin.Set(!ampPin.Get())
+	pwrPin.Set(!pwrPin.Get())
+	blink(led, 2)
+}
+
 func setupPins() {
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	irPin.Configure(machine.PinConfig{Mode: machine.PinInput})
+	ampPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	pwrPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+
+	irPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
+	btnPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
 
 	led.High()
 	time.Sleep(250 * time.Millisecond)
