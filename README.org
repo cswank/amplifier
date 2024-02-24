@@ -5,6 +5,10 @@
 #+NAME:   fig:PCB
 [[./doc/pcb-r1.png]]
 
+#+CAPTION: Schematic
+#+NAME:   fig:Schematic
+[[./doc/schematic.png]]
+
 *** Amplifier
 1ET400A
 [[./doc/1ET400A - Data Sheet (1.00).pdf][Data Sheet]]
