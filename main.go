@@ -119,6 +119,7 @@ func setup() {
 	pwrPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	onLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	offLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	onLEDPin.Low()
 	offLEDPin.High()
 	pwrPin.Low()
 	ampPin.Low()
