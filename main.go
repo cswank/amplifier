@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	events   []time.Duration
+	irPulses [100]time.Duration
 	btnPress bool
 	i        int
 	t1, t2   time.Time
@@ -43,7 +43,7 @@ func main() {
 			btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
 		case "ir":
 			irPin.SetInterrupt(0, nil)
-			parseIR(events[:i])
+			parseIR()
 			i = 0
 			irPin.SetInterrupt(machine.PinToggle, irInterrupt)
 		}
@@ -60,7 +60,7 @@ func irInterrupt(p machine.Pin) {
 	}
 
 	t2 = time.Now()
-	events[i] = t2.Sub(t1)
+	irPulses[i] = t2.Sub(t1)
 	t1 = t2
 	i++
 }
@@ -77,8 +77,8 @@ func shouldToggle() string {
 	return ""
 }
 
-func parseIR(events []time.Duration) {
-	addr, cmd, err := ir.Command(events)
+func parseIR() {
+	addr, cmd, err := ir.Command(irPulses[:i])
 	if err != nil {
 		blink(led, 5)
 		return
@@ -94,9 +94,9 @@ func parseIR(events []time.Duration) {
 func blink(led machine.Pin, n int) {
 	for i := 0; i < n; i++ {
 		led.High()
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		led.Low()
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -111,8 +111,6 @@ func togglePower() {
 
 func setup() {
 	t1 = time.Now()
-
-	events = make([]time.Duration, 100)
 
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	ampPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
