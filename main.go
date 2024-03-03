@@ -117,13 +117,13 @@ func setup() {
 	pwrPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	onLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	offLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	onLEDPin.Low()
-	offLEDPin.High()
-	pwrPin.Low()
-	ampPin.Low()
-
 	irPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
 	btnPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
+
+	pwrPin.High()
+	ampPin.High()
+	onLEDPin.Low()
+	offLEDPin.High()
 
 	led.High()
 	time.Sleep(250 * time.Millisecond)
