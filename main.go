@@ -103,13 +103,14 @@ func blink(led machine.Pin, n int) {
 func togglePower() {
 	st := ampPin.Get()
 	ampPin.Set(!st)
-	pwrPin.Set(!pwrPin.Get())
+	pwrPin.Set(!st)
 	onLEDPin.Set(!st)
 	offLEDPin.Set(st)
 	blink(led, 2)
 }
 
 func setup() {
+	ir.Tolerance = 200 * time.Microsecond
 	t1 = time.Now()
 
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
@@ -120,10 +121,12 @@ func setup() {
 	irPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
 	btnPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
 
+	// both the power supply and amplifier are disabled by applying voltage to the respective pins
 	pwrPin.High()
 	ampPin.High()
-	onLEDPin.Low()
-	offLEDPin.High()
+
+	onLEDPin.High()
+	offLEDPin.Low()
 
 	led.High()
 	time.Sleep(250 * time.Millisecond)
