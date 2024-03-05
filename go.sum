@@ -1,5 +1,5 @@
-github.com/cswank/ir v0.6.0 h1:qMqz5/PmbMITSfrXdm0XVJhLy6iOHq67pysqQMDJp9w=
-github.com/cswank/ir v0.6.0/go.mod h1:BTbN+zc7rBA5iO0OwBnuvdnFDnfaK7EUjRxSp07b/VE=
+github.com/cswank/ir v0.6.1 h1:d2SF2lGVWUtOk5sEwOyqWle9ozI5ysrlfeF9S2N5oRM=
+github.com/cswank/ir v0.6.1/go.mod h1:BTbN+zc7rBA5iO0OwBnuvdnFDnfaK7EUjRxSp07b/VE=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

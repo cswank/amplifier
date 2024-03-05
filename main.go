@@ -46,6 +46,10 @@ func main() {
 			parseIR()
 			i = 0
 			irPin.SetInterrupt(machine.PinToggle, irInterrupt)
+		default:
+			if time.Now().Sub(t1) > 100*time.Millisecond {
+				i = 0
+			}
 		}
 	}
 }
@@ -110,7 +114,6 @@ func togglePower() {
 }
 
 func setup() {
-	ir.Tolerance = 200 * time.Microsecond
 	t1 = time.Now()
 
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
@@ -132,8 +135,8 @@ func setup() {
 	time.Sleep(250 * time.Millisecond)
 	led.Low()
 
-	tk = time.NewTicker(250 * time.Millisecond)
-
 	btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
 	irPin.SetInterrupt(machine.PinToggle, irInterrupt)
+
+	tk = time.NewTicker(250 * time.Millisecond)
 }
