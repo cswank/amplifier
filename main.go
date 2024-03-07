@@ -2,6 +2,7 @@ package main
 
 import (
 	"machine"
+	"runtime/volatile"
 	"time"
 
 	"github.com/cswank/ir"
@@ -24,16 +25,17 @@ const (
 var (
 	irPulses [100]time.Duration
 	btnPress bool
-	i        int
+	i        uint8
 	t1, t2   time.Time
-	tk       *time.Ticker
+	index    volatile.Register8
+	ch       chan empty
 )
 
 func main() {
 	setup()
 
 	for {
-		<-tk.C
+		<-ch
 
 		switch shouldToggle() {
 		case "button":
@@ -44,11 +46,11 @@ func main() {
 		case "ir":
 			irPin.SetInterrupt(0, nil)
 			parseIR()
-			i = 0
+			index.Set(0)
 			irPin.SetInterrupt(machine.PinToggle, irInterrupt)
 		default:
 			if time.Now().Sub(t1) > 100*time.Millisecond {
-				i = 0
+				index.Set(0)
 			}
 		}
 	}
@@ -56,9 +58,14 @@ func main() {
 
 func btnInterrupt(p machine.Pin) {
 	btnPress = true
+	select {
+	case ch <- empty{}:
+	default:
+	}
 }
 
 func irInterrupt(p machine.Pin) {
+	i = index.Get()
 	if i == 100 {
 		return
 	}
@@ -67,6 +74,14 @@ func irInterrupt(p machine.Pin) {
 	irPulses[i] = t2.Sub(t1)
 	t1 = t2
 	i++
+	index.Set(i)
+
+	if i > ir.PayloadSize {
+		select {
+		case ch <- empty{}:
+		default:
+		}
+	}
 }
 
 func shouldToggle() string {
@@ -74,7 +89,8 @@ func shouldToggle() string {
 		return "button"
 	}
 
-	if i >= ir.PayloadSize && time.Now().Sub(t1) > 100*time.Millisecond {
+	time.Sleep(100 * time.Millisecond)
+	if index.Get() >= ir.PayloadSize {
 		return "ir"
 	}
 
@@ -82,7 +98,7 @@ func shouldToggle() string {
 }
 
 func parseIR() {
-	addr, cmd, err := ir.Command(irPulses[:i])
+	addr, cmd, err := ir.Command(irPulses[:index.Get()])
 	if err != nil {
 		blink(led, 5)
 		return
@@ -124,7 +140,7 @@ func setup() {
 	irPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
 	btnPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
 
-	// both the power supply and amplifier are disabled by applying voltage to the respective pins
+	// both the power supply and amplifier are disabled by applying voltage to their respective on/off pins
 	pwrPin.High()
 	ampPin.High()
 
@@ -138,5 +154,5 @@ func setup() {
 	btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
 	irPin.SetInterrupt(machine.PinToggle, irInterrupt)
 
-	tk = time.NewTicker(250 * time.Millisecond)
+	ch = make(chan empty)
 }
