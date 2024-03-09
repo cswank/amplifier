@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"machine"
 	"runtime/volatile"
 	"time"
@@ -24,8 +25,9 @@ const (
 
 var (
 	irPulses [100]time.Duration
-	btnPress bool
+	btnPress volatile.Register8
 	i        uint8
+	dur      time.Duration
 	t1, t2   time.Time
 	index    volatile.Register8
 	ch       chan empty
@@ -41,23 +43,20 @@ func main() {
 		case "button":
 			btnPin.SetInterrupt(0, nil)
 			togglePower()
-			btnPress = false
+			btnPress.Set(0)
 			btnPin.SetInterrupt(machine.PinToggle, btnInterrupt)
 		case "ir":
 			irPin.SetInterrupt(0, nil)
 			parseIR()
 			index.Set(0)
 			irPin.SetInterrupt(machine.PinToggle, irInterrupt)
-		default:
-			if time.Now().Sub(t1) > 100*time.Millisecond {
-				index.Set(0)
-			}
 		}
 	}
 }
 
 func btnInterrupt(p machine.Pin) {
-	btnPress = true
+	btnPress.Set(1)
+	// writing to a channel from an interrupt doesn't work on the pico without a select (don't understand why)
 	select {
 	case ch <- empty{}:
 	default:
@@ -71,12 +70,18 @@ func irInterrupt(p machine.Pin) {
 	}
 
 	t2 = time.Now()
-	irPulses[i] = t2.Sub(t1)
+	dur = t2.Sub(t1)
+
+	if dur > time.Second {
+		i = 0
+	}
+
+	irPulses[i] = dur
 	t1 = t2
 	i++
 	index.Set(i)
 
-	if i > ir.PayloadSize {
+	if i >= ir.PayloadSize {
 		select {
 		case ch <- empty{}:
 		default:
@@ -85,11 +90,12 @@ func irInterrupt(p machine.Pin) {
 }
 
 func shouldToggle() string {
-	if btnPress {
+	if btnPress.Get() == 1 {
 		return "button"
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	// make sure all the IR pulses have been received
+	time.Sleep(250 * time.Millisecond)
 	if index.Get() >= ir.PayloadSize {
 		return "ir"
 	}
@@ -100,11 +106,12 @@ func shouldToggle() string {
 func parseIR() {
 	addr, cmd, err := ir.Command(irPulses[:index.Get()])
 	if err != nil {
+		log.Println(err)
 		blink(led, 5)
 		return
 	}
 
-	if addr == 0x35 && cmd == 0x40 {
+	if addr == 0x35 && cmd == 0x40 { // minidsp flex on/off button
 		togglePower()
 	} else {
 		blink(led, 1) // not the button we're looking for
