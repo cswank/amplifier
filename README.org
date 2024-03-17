@@ -1,4 +1,6 @@
 * Amplifier
+** Anodizing
+https://makeitfrommetal.com/how-to-anodize-aluminum-at-home/
 ** Parts
 *** PCB
 #+CAPTION: Rev 1 of the pcb
