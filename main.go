@@ -17,8 +17,7 @@ const (
 	led       = machine.LED
 	btnPin    = machine.GPIO12
 	irPin     = machine.GPIO15
-	ampPin    = machine.GPIO20
-	pwrPin    = machine.GPIO21
+	pwrPin    = machine.GPIO20
 	onLEDPin  = machine.GPIO17
 	offLEDPin = machine.GPIO16
 )
@@ -128,8 +127,7 @@ func blink(led machine.Pin, n int) {
 }
 
 func togglePower() {
-	st := ampPin.Get()
-	ampPin.Set(!st)
+	st := pwrPin.Get()
 	pwrPin.Set(!st)
 	onLEDPin.Set(!st)
 	offLEDPin.Set(st)
@@ -140,16 +138,14 @@ func setup() {
 	t1 = time.Now()
 
 	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	ampPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	pwrPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	onLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	offLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	irPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
-	btnPin.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
+	btnPin.Configure(machine.PinConfig{Mode: machine.PinInput})
 
-	// both the power supply and amplifier are disabled by applying voltage to their respective on/off pins
+	// the power supply is disabled by applying voltage to its on/off pin
 	pwrPin.High()
-	ampPin.High()
 
 	onLEDPin.High()
 	offLEDPin.Low()
