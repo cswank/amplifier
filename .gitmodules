@@ -1,3 +1,6 @@
 [submodule "kicad/KiCad-RP-Pico"]
 	path = kicad/KiCad-RP-Pico
 	url = git@github.com:ncarandini/KiCad-RP-Pico.git
+[submodule "microzig"]
+	path = microzig
+	url = git@github.com:ZigEmbeddedGroup/microzig.git
