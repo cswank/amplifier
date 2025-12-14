@@ -58,7 +58,7 @@ fn togglePower() void {
 
 fn checkIR() void {
     if (parser.value()) |msg| {
-        if (msg.address == 0x35 and msg.command == 0x40) {
+        if (msg.address == 0x35 and msg.command == 0x40) { // minidsp flex on/off button
             togglePower();
         }
     } else |_| {
