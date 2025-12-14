@@ -11,8 +11,8 @@ const led = gpio.num(25);
 const button = gpio.num(12);
 const ir_input = gpio.num(15);
 const pwr = gpio.num(20);
-const on_led = gpio.num(17);
-const off_led = gpio.num(16);
+const on_led = gpio.num(16);
+const off_led = gpio.num(17);
 
 const uart = rp2xxx.uart.instance.num(0);
 const tx_pin = gpio.num(0);
@@ -27,6 +27,7 @@ pub const microzig_options = microzig.Options{
 var t1: time.Absolute = undefined;
 var t2: time.Absolute = undefined;
 var parser = ir.IR{};
+var btn_disable: bool = false;
 
 fn callback() linksection(".ram_text") callconv(.c) void {
     var iter = gpio.IrqEventIter{};
@@ -34,6 +35,7 @@ fn callback() linksection(".ram_text") callconv(.c) void {
         switch (e.pin) {
             button => {
                 togglePower();
+                btn_disable = true;
             },
             ir_input => {
                 t2 = rptime.get_time_since_boot();
@@ -48,10 +50,14 @@ fn callback() linksection(".ram_text") callconv(.c) void {
 }
 
 fn togglePower() void {
+    if (btn_disable) {
+        return;
+    }
+
     const st = pwr.read();
     pwr.put(1 - st);
-    on_led.put(1 - st);
-    off_led.put(st);
+    on_led.put(st);
+    off_led.put(1 - st);
     blink(2);
 }
 
@@ -76,8 +82,10 @@ pub fn main() !void {
     init();
     t1 = rptime.get_time_since_boot();
     off_led.put(1);
+    pwr.put(1);
     while (true) {
         rptime.sleep_ms(2_000);
+        btn_disable = false;
     }
 }
 
