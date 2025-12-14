@@ -33,8 +33,7 @@ fn callback() linksection(".ram_text") callconv(.c) void {
     while (iter.next()) |e| {
         switch (e.pin) {
             button => {
-                led.toggle();
-                std.log.debug("button fall: {}, rise: {}", .{ e.events.fall, e.events.rise });
+                togglePower();
             },
             ir_input => {
                 t2 = rptime.get_time_since_boot();
@@ -76,6 +75,7 @@ fn blink(n: u4) void {
 pub fn main() !void {
     init();
     t1 = rptime.get_time_since_boot();
+    off_led.put(1);
     while (true) {
         rptime.sleep_ms(2_000);
     }
