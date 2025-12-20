@@ -8,7 +8,7 @@ const time = microzig.drivers.time;
 const gpio = rp2xxx.gpio;
 
 const led = gpio.num(25);
-const ir_input = gpio.num(15);
+const ir_input = gpio.num(10);
 
 const uart = rp2xxx.uart.instance.num(0);
 const tx_pin = gpio.num(0);
@@ -42,10 +42,12 @@ fn callback() linksection(".ram_text") callconv(.c) void {
 
 fn checkIR() void {
     if (parser.value()) |msg| {
+        std.log.debug("addr: 0x{x}, command: 0x{x}\n", .{ msg.address, msg.command });
         if (msg.address == 0x35 and msg.command == 0x40) { // minidsp flex on/off button
             led.toggle();
         }
-    } else |_| {
+    } else |err| {
+        std.log.debug("error: {}\n", .{err});
         blink(5); //invalid ir signal
     }
 }
