@@ -22,7 +22,7 @@ pub const microzig_options = microzig.Options{
 
 var t1: time.Absolute = undefined;
 var t2: time.Absolute = undefined;
-var parser = ir.NEC{ .tolerance = 50 };
+var parser = ir.NEC{ .tolerance = 100 };
 
 fn callback() linksection(".ram_text") callconv(.c) void {
     var iter = gpio.IrqEventIter{};
