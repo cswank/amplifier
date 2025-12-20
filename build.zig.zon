@@ -34,8 +34,8 @@
     .dependencies = .{
         .microzig = .{ .path = "microzig" },
         .ir = .{
-            .url = "https://github.com/cswank/ir/archive/refs/heads/zig.zip",
-            .hash = "ir-0.0.0-RNtv6cgrAAC1kj6Lld6XciRbKJ_wzvnXLqFSQPG1o9rn",
+            .url = "https://github.com/cswank/ir/archive/refs/tags/v2.0.1.tar.gz",
+            .hash = "ir-0.0.0-RNtv6eQpAAAkjEbU2waZnv6dWz9L17DNPRZ875DFRNpD",
         },
     },
     .paths = .{
