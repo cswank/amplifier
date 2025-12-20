@@ -13,10 +13,32 @@ pub fn build(b: *std.Build) void {
 
     const ir_dep = b.dependency("ir", .{});
 
-    const firmware = mb.add_firmware(.{ .name = "amp", .target = target, .optimize = optimize, .root_source_file = b.path("src/main.zig"), .imports = &.{
-        .{ .name = "ir", .module = ir_dep.module("ir") },
-    } });
+    const firmware = mb.add_firmware(
+        .{
+            .name = "amp",
+            .target = target,
+            .optimize = optimize,
+            .root_source_file = b.path("src/main.zig"),
+            .imports = &.{
+                .{ .name = "ir", .module = ir_dep.module("ir") },
+            },
+        },
+    );
+
+    const test_firmware = mb.add_firmware(
+        .{
+            .name = "blink",
+            .target = target,
+            .optimize = optimize,
+            .root_source_file = b.path("src/blink.zig"),
+            .imports = &.{
+                .{ .name = "ir", .module = ir_dep.module("ir") },
+            },
+        },
+    );
 
     mb.install_firmware(firmware, .{});
     mb.install_firmware(firmware, .{ .format = .elf });
+    mb.install_firmware(test_firmware, .{});
+    mb.install_firmware(test_firmware, .{ .format = .elf });
 }
