@@ -43,7 +43,7 @@ fn callback() linksection(".ram_text") callconv(.c) void {
 fn checkIR() void {
     if (parser.value()) |msg| {
         std.log.debug("addr: 0x{x}, command: 0x{x}\n", .{ msg.address, msg.command });
-        if (msg.address == 0x35 and msg.command == 0x40) { // minidsp flex on/off button
+        if (msg.address == 0x80 and msg.command == 0x1a) {
             led.toggle();
         }
     } else |err| {
